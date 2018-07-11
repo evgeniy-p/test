@@ -1,0 +1,83 @@
+---
+
+    - hosts: newnode
+      vars:
+        yum_config: /etc/yum.repos.d/ringme-iso.repo
+      tasks:
+
+        - name: No zero conf
+          lineinfile:
+            path: /etc/sysconfig/network
+            line: "NOZEROCONF=true"
+            backup: yes
+
+        - name: No root login
+          replace:
+            path: /etc/ssh/sshd_config
+            regexp: '^.*PermitRootLogin.*$'
+            replace: 'PermitRootLogin without-password'
+            backup: yes
+          notify: restart_sshd
+
+        - name: Disable selinux
+          replace:
+            path: /etc/selinux/config
+            regexp: '^SELINUX=enforcing.*$'
+            replace: 'SELINUX=permissive'
+            backup: yes
+
+
+        - name: Insert into hosts
+          lineinfile:
+            path: /etc/hosts
+            line: "{{ item.line }}"
+            backup: yes
+          with_items:
+            - { line: '192.168.10.90 demo2.ringme.ru' }
+            - { line: '192.168.10.200 demo.ringme.ru' }
+
+        - name: Set timezone
+          command: timedatectl set-timezone Europe/Moscow
+
+        - name: Create yum.d/repo
+          lineinfile:
+            path: /etc/yum.repos.d/ringme.repo
+            create: yes
+            backup: yes
+            line: "{{ item.line }}"
+          with_items:
+            - { line: '[ringme]' }
+            - { line: 'baseurl=http://repo.ringme.ru/ringme/centos/$releasever/$basearch/' }
+            - { line: 'enabled=1' }
+            - { line: 'gpgcheck=0' }
+
+        - name: Install packages
+          yum:
+            name: "{{ item.name }}"
+            state: "{{ item.state }}"
+            conf_file: vars.yum_config
+          with_items:
+            - { name: 'epel-release', state: 'latest' }
+            - { name: 'yum-plugin-priorities', state: 'latest' }
+            - { name: 'git', state: 'latest' }
+            - { name: 'ringme-meta-base', state: 'latest' }
+            - { name: 'policycoreutils', state: 'latest' }
+            - { name: 'ingme-couchbase-server', state: 'latest' }
+
+        - name: Setenforse permissive
+          shell: setenforce permissive
+
+
+      handlers:
+        - name: restart_sshd
+          service:
+            name: sshd
+            state: restart
+
+
+
+        - name: Test
+          debug:
+            msg: "{{ hostvars[inventory_hostname]['ansible_%s' | format(item)]['ipv4']['address'] }}"
+          with_items: "{{ ansible_interfaces }}"
+
