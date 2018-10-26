@@ -1619,8 +1619,8 @@ union protocol_binary_request_dcp_mutation {
 };
 
 
+static constexpr size_t extlen_v1 = 18;
 union protocol_binary_request_dcp_deletion {
-    static constexpr size_t extlen = 18;
     protocol_binary_request_dcp_deletion(uint32_t opaque,
                                          uint16_t vbucket,
                                          uint64_t cas,
@@ -1637,7 +1637,7 @@ union protocol_binary_request_dcp_deletion {
         req.vbucket = htons(vbucket);
         req.cas = htonll(cas);
         req.keylen = htons(keyLen);
-        req.extlen = extlen;
+        req.extlen = extlen_v1;
         req.bodylen = ntohl(req.extlen + keyLen + nmeta + valueLen);
         req.datatype = datatype;
 
@@ -1654,12 +1654,12 @@ union protocol_binary_request_dcp_deletion {
             uint16_t nmeta;
         } body;
     } message;
-    uint8_t bytes[sizeof(protocol_binary_request_header) + extlen];
+    uint8_t bytes[sizeof(protocol_binary_request_header) + extlen_v1];
 };
 
-
+static constexpr size_t extlen_v2 = 21;
 union protocol_binary_request_dcp_deletion_v2 {
-    static constexpr size_t extlen = 21;
+
     protocol_binary_request_dcp_deletion_v2(uint32_t opaque,
                                             uint16_t vbucket,
                                             uint64_t cas,
@@ -1677,7 +1677,7 @@ union protocol_binary_request_dcp_deletion_v2 {
         req.vbucket = htons(vbucket);
         req.cas = htonll(cas);
         req.keylen = htons(keyLen);
-        req.extlen = extlen;
+        req.extlen  = extlen_v2 ;
         req.bodylen = ntohl(req.extlen + keyLen + valueLen);
         req.datatype = datatype;
 
@@ -1697,7 +1697,7 @@ union protocol_binary_request_dcp_deletion_v2 {
             uint8_t collection_len;
         } body;
     } message;
-    uint8_t bytes[sizeof(protocol_binary_request_header) + extlen];
+    uint8_t bytes[sizeof(protocol_binary_request_header) + extlen_v2 ];
 };
 
 union protocol_binary_request_dcp_expiration {
